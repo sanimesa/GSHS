@@ -6,7 +6,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 # Load your survey data
-survey_data = pd.read_excel("data\GSHS_2024_MSHS_629.xlsx")
+survey_data = pd.read_excel("data/GSHS_2024_MSHS_629.xlsx")
 
 # Set the logo image
 logo_image = Image.open("images/GaDOE-Logo-Color-188X100.png")  # Replace with the path to your logo image
