@@ -41,6 +41,8 @@ st.sidebar.image(logo_image, width=150)
 # Add a sidebar with a few links
 st.sidebar.title("Dashboard")
 if st.sidebar.button('Gender distribution of respondents'):
+    if 'general_questions_dropdown' in st.session_state:
+        st.session_state.general_questions_dropdown = None    
     # st.experimental_set_query_params(page='gender_distribution')
     page = 'gender_distribution'
 
@@ -48,10 +50,27 @@ if st.sidebar.button('Gender distribution of respondents'):
 selected_general_question = None
 st.sidebar.title("General Questions")
 questions, button_texts = get_general_questions(download_data())
-for i, button_text in enumerate(button_texts):
-    if st.sidebar.button(button_text, key=f'general_question_button_{i}'):
-        page = 'general_questions'
-        selected_general_question = questions[i]
+general_question_lookup_dict = dict(zip(button_texts, questions))
+
+# Function to get corresponding element
+def get_corresponding_element(item, lookup_dict):
+    return lookup_dict.get(item, "Item not found")
+
+option = st.sidebar.selectbox(
+    "Select a question:",
+    ['Select a question'] + button_texts,
+    key="general_questions_dropdown",
+    index=0
+)
+
+if option and option != 'Select a question':
+    selected_general_question = get_corresponding_element(option, general_question_lookup_dict)
+    page = 'general_questions'
+
+# for i, button_text in enumerate(button_texts):
+#     if st.sidebar.button(button_text, key=f'general_question_button_{i}'):
+#         page = 'general_questions'
+#         selected_general_question = questions[i]
 
 survey_data = download_data()
 
