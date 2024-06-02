@@ -12,6 +12,14 @@ def download_data():
 
     return df
 
+@st.cache_data
+def get_general_questions(df):
+    #get the names for the 16 through 37 columns 
+    questions = df.columns[16:38]
+    button_texts = [question[0:50] for question in questions]
+
+    return questions, button_texts
+ 
 
 st.set_page_config(layout="wide")
 
@@ -26,32 +34,24 @@ st.markdown(
 )
 
 #default page 
-page = 'home'
+page = 'gender_distribution'
 
 st.sidebar.image(logo_image, width=150)
 
 # Add a sidebar with a few links
-st.sidebar.title("Navigation")
-if st.sidebar.button('Home'):
-    # st.experimental_set_query_params(page='home')
-    page = 'home'
-if st.sidebar.button('Survey Results'):
-    # st.experimental_set_query_params(page='survey_results')
-    page = 'survey_results'
-if st.sidebar.button('About'):
-    # st.experimental_set_query_params(page='about')
-    page = 'about'
+st.sidebar.title("Dashboard")
 if st.sidebar.button('Gender distribution of respondents'):
     # st.experimental_set_query_params(page='gender_distribution')
     page = 'gender_distribution'
 
+# render the general questions section 
+selected_general_question = None
 st.sidebar.title("General Questions")
-if st.sidebar.button('How often / I feel ..'):
-    page = 'general_questions'
-
-# Check query params to decide which section to display
-# query_params = st.query_params
-# page = query_params.get('page', ['home'])[0]
+questions, button_texts = get_general_questions(download_data())
+for i, button_text in enumerate(button_texts):
+    if st.sidebar.button(button_text, key=f'general_question_button_{i}'):
+        page = 'general_questions'
+        selected_general_question = questions[i]
 
 survey_data = download_data()
 
@@ -70,19 +70,21 @@ elif page == 'gender_distribution':
     # Plotting Gender Distribution
     gender_distribution = survey_data['Gender'].value_counts()
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(3, 1))
     gender_distribution.plot(kind='bar', color='skyblue')
     plt.title('Gender Distribution of Respondents')
     plt.xlabel('Gender')
     plt.ylabel('Number of Respondents')
     plt.xticks(rotation=45)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-    st.pyplot(plt)
+    st.pyplot(plt, use_container_width=False)
 elif page == 'general_questions':    
 
+    st.markdown(f"<h4>{selected_general_question}</h4>", unsafe_allow_html=True)
+    
     survey_data['Count'] = 1
     #rename the column "1. Most days I look forward to going to school." to Response 
-    survey_data = survey_data.rename(columns={"1. Most days I look forward to going to school.": "Response"})
+    survey_data = survey_data.rename(columns={selected_general_question: "Response"})
 
     col1, col2 = st.columns(2)
 
