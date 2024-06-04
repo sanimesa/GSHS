@@ -149,7 +149,7 @@ def main():
             options=["Overview", "School Experience", "Safety"],  # required
             #icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
-            default_index=menu_index,  # optional
+            # default_index=menu_index,  # optional
         )
 
     # # Add a sidebar with links
@@ -217,7 +217,6 @@ def main():
 
         with col21:
             ethnicity_distribution = survey_data.groupby('Ethnicity')['Count'].sum().reset_index()
-            print(ethnicity_distribution)
 
             chart = alt.Chart(ethnicity_distribution).mark_arc().encode(
                     theta="Count",
