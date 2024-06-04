@@ -9,54 +9,44 @@ import matplotlib.pyplot as plt
 df = pd.read_excel("data/GSHS_2024_MSHS_629.xlsx", sheet_name="GSHS_2024_MSHS_629 (1)")
 source = df
 
-print(df.info())
-print(df.dtypes)
+import altair as alt
 
-#add a dolumn to df with values as all 1    
-df['Count'] = 1
-print(df.head())
-#rename the column "1. Most days I look forward to going to school." to Response 
-df = df.rename(columns={"1. Most days I look forward to going to school.": "Response"})
-print(df.head())
+# Filter columns based on the pattern
+filtered_columns = df.filter(regex='20\. I have felt unsafe at school or on my way to or from school\.'
+                                  ' through 29\. How often in the last 30 days has someone bullied me by making fun of me or spreading rumors about me\.', axis=1)
 
-#create a new dataframe with the sum of count for each ethnicity and response
-# df_grouped = df.groupby(['Ethnicity', 'Response']).sum()
-# print(df_grouped)
+print(len(filtered_columns)) 
+print(filtered_columns.head())
 
-# #reset the index of the dataframe
-# df_grouped = df_grouped.reset_index()
-# print(df_grouped)
+# Iterate through each column
+for col in filtered_columns:
+    # Calculate the proportion of respondents for each unique value
+    value_counts = filtered_columns[col].value_counts(normalize=True)
 
-#create a chart with the sum of count for each ethnicity and response
-chart = alt.Chart(df).mark_bar().encode(
-    x=alt.X('sum(Count)').stack("normalize"),
-    y='Ethnicity',
-    color='Response'
-).properties(
-    title='Response Distribution by Ethnicity'
-)
+    # Create a DataFrame for the chart
+    chart_df = pd.DataFrame({'Response': value_counts.index, 'Proportion of Respondents': value_counts.values})
 
-chart.save('chart.html')
+    # Create a bar chart
+    chart = alt.Chart(chart_df, title=col).mark_bar().encode(
+        x=alt.X('Response:N', axis=alt.Axis(labelAngle=-45)),
+        y=alt.Y('Proportion of Respondents:Q'),
+        tooltip=['Response', 'Proportion of Respondents']
+    ).interactive()
 
+    # Save the chart
+    chart.save(f'{col}_bar_chart.json')
 
-# chart = alt.Chart(source).mark_bar().encode(
-#     x=alt.X('sum(Count)').stack("normalize"),
-#     y='Ethnicity',
-#     color='"1. Most days I look forward to going to school."'
-# )
+# print(df.info())
+# print(df.dtypes)
 
-# chart.save('chart.html')
+# #add a dolumn to df with values as all 1    
+# df['Count'] = 1
+# print(df.head())
+# #rename the column "1. Most days I look forward to going to school." to Response 
+# df = df.rename(columns={"1. Most days I look forward to going to school.": "Response"})
+# print(df.head())
 
-# # Sample data creation
-# data = {
-#     'Ethnicity': ['Asian', 'Asian', 'Asian', 'Asian', 'Black', 'Black', 'Black', 'Black', 'Hispanic', 'Hispanic', 'Hispanic', 'Hispanic', 'White', 'White', 'White', 'White'],
-#     'Response': ['Strongly Agree', 'Somewhat Agree', 'Strongly Disagree', 'Somewhat Disagree', 'Strongly Agree', 'Somewhat Agree', 'Strongly Disagree', 'Somewhat Disagree', 'Strongly Agree', 'Somewhat Agree', 'Strongly Disagree', 'Somewhat Disagree', 'Strongly Agree', 'Somewhat Agree', 'Strongly Disagree', 'Somewhat Disagree'],
-#     'Count': [20, 15, 5, 10, 18, 12, 8, 6, 22, 14, 7, 9, 30, 20, 10, 15]
-# }
-
-# df = pd.DataFrame(data)
-
-# # Create the chart
+# #create a chart with the sum of count for each ethnicity and response
 # chart = alt.Chart(df).mark_bar().encode(
 #     x=alt.X('sum(Count)').stack("normalize"),
 #     y='Ethnicity',
@@ -66,3 +56,5 @@ chart.save('chart.html')
 # )
 
 # chart.save('chart.html')
+
+
