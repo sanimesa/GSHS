@@ -137,16 +137,16 @@ def main():
 
     # Add a sidebar with links
     st.sidebar.title("Dashboard")
-    if st.sidebar.button('Gender distribution of respondents'):
+
+    if st.sidebar.button('Overview'):
         # if 'general_questions_dropdown' in st.session_state:
         #     st.session_state.general_questions_dropdown = None    
         # if 'safety_questions_dropdown' in st.session_state:
         #     st.session_state.safety_questions_dropdown = None    
 
-        page = 'gender_distribution'
+        page = 'overview'
 
     st.sidebar.title("School Experience")
-
     if st.sidebar.button('I feel like ... '):
         page = 'school_experience_questions'
 
@@ -160,7 +160,7 @@ def main():
         elif 'safety_questions_dropdown' in st.session_state:
             page = 'safety_questions'
         else: 
-            page = 'gender_distribution'
+            page = 'overview'
 
     if page == 'home':
         # Display the default content
@@ -173,22 +173,45 @@ def main():
         )
 
         st.altair_chart(c, use_container_width=True)
-    elif page == 'gender_distribution':
-        print('... in gender distribution')
-        if 'general_questions_dropdown' in st.session_state:
-            print(st.session_state.general_questions_dropdown)
-        # Plotting Gender Distribution
-        survey_data = download_data()
-        gender_distribution = survey_data['Gender'].value_counts()
+    elif page == 'overview':
+        print('... in overview')
 
-        plt.figure(figsize=(3, 1))
-        gender_distribution.plot(kind='bar', color='skyblue')
-        plt.title('Gender Distribution of Respondents')
-        plt.xlabel('Gender')
-        plt.ylabel('Number of Respondents')
-        plt.xticks(rotation=45)
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
-        st.pyplot(plt, use_container_width=False)
+        survey_data = download_data()
+        survey_data['Count'] = 1
+        print(survey_data.columns)
+
+        # You can also add multiple metrics side by side
+        col11, col12, col13 = st.columns(3)
+        col11.metric("Number of Systems", len(survey_data[' SystemName'].unique()))
+        col12.metric("Number of Schools", len(survey_data[' SchoolName'].unique()))
+        col13.metric("Number of Students", len(survey_data))
+
+        st.divider()
+
+        col21, col22 = st.columns(2)
+
+        with col21:
+            ethnicity_distribution = survey_data.groupby('Ethnicity')['Count'].sum().reset_index()
+            print(ethnicity_distribution)
+
+            chart = alt.Chart(ethnicity_distribution).mark_arc().encode(
+                    theta="Count",
+                    color="Ethnicity"
+                )
+            
+            st.altair_chart(chart, use_container_width=True)
+
+        with col22:
+            gender_distribution = survey_data.groupby('Gender')['Count'].sum().reset_index()
+
+            chart = alt.Chart(gender_distribution).mark_arc().encode(
+                    theta="Count",
+                    color="Gender"
+                )
+            
+            st.altair_chart(chart, use_container_width=True)
+
+
     elif page == 'school_experience_questions':    
         show_school_experience_questions()
 
