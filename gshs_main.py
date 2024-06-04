@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -135,32 +136,56 @@ def main():
 
     page = None 
 
-    # Add a sidebar with links
-    st.sidebar.title("Dashboard")
+    if 'school_experience_questions_dropdown' in st.session_state:
+        menu_index = 1
+    elif 'safety_questions_dropdown' in st.session_state:
+        menu_index = 2
+    else: 
+        menu_index = 0
 
-    if st.sidebar.button('Overview'):
-        # if 'general_questions_dropdown' in st.session_state:
-        #     st.session_state.general_questions_dropdown = None    
-        # if 'safety_questions_dropdown' in st.session_state:
-        #     st.session_state.safety_questions_dropdown = None    
+    with st.sidebar:
+        selected_menu_item = option_menu(
+            menu_title=None, # "Main Menu",  # required
+            options=["Overview", "School Experience", "Safety"],  # required
+            #icons=["house", "book", "envelope"],  # optional
+            menu_icon="cast",  # optional
+            default_index=menu_index,  # optional
+        )
 
+    # # Add a sidebar with links
+    # st.sidebar.title("Dashboard")
+
+    # if st.sidebar.button('Overview'):
+    #     # if 'general_questions_dropdown' in st.session_state:
+    #     #     st.session_state.general_questions_dropdown = None    
+    #     # if 'safety_questions_dropdown' in st.session_state:
+    #     #     st.session_state.safety_questions_dropdown = None    
+
+    #     page = 'overview'
+
+    # st.sidebar.title("School Experience")
+    # if st.sidebar.button('I feel like ... '):
+    #     page = 'school_experience_questions'
+
+    # st.sidebar.title("Safety")
+    # if st.sidebar.button('In the last 30 days ...'):    
+    #     page = 'safety_questions'
+
+    # if page == None:
+    #     if 'school_experience_questions_dropdown' in st.session_state:
+    #         page = 'school_experience_questions'
+    #     elif 'safety_questions_dropdown' in st.session_state:
+    #         page = 'safety_questions'
+    #     else: 
+    #         page = 'overview'
+
+    if selected_menu_item == 'Overview':
         page = 'overview'
-
-    st.sidebar.title("School Experience")
-    if st.sidebar.button('I feel like ... '):
+    elif selected_menu_item == 'School Experience':
         page = 'school_experience_questions'
-
-    st.sidebar.title("Safety")
-    if st.sidebar.button('In the last 30 days ...'):    
+    elif selected_menu_item == 'Safety':
         page = 'safety_questions'
 
-    if page == None:
-        if 'school_experience_questions_dropdown' in st.session_state:
-            page = 'school_experience_questions'
-        elif 'safety_questions_dropdown' in st.session_state:
-            page = 'safety_questions'
-        else: 
-            page = 'overview'
 
     if page == 'home':
         # Display the default content
@@ -188,7 +213,7 @@ def main():
 
         st.divider()
 
-        col21, col22 = st.columns(2)
+        col21, col22, col23 = st.columns(3)
 
         with col21:
             ethnicity_distribution = survey_data.groupby('Ethnicity')['Count'].sum().reset_index()
@@ -211,6 +236,15 @@ def main():
             
             st.altair_chart(chart, use_container_width=True)
 
+        with col23:
+            grade_distribution = survey_data.groupby('Grade')['Count'].sum().reset_index()
+
+            chart = alt.Chart(grade_distribution).mark_arc().encode(
+                    theta="Count",
+                    color="Grade"
+                )
+            
+            st.altair_chart(chart, use_container_width=True)
 
     elif page == 'school_experience_questions':    
         show_school_experience_questions()
