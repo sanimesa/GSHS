@@ -14,6 +14,15 @@ def download_data():
     return df
 
 @st.cache_data
+def get_data_table_questions(df):
+    #get the names for the 16 through 37 columns 
+    questions = df.columns[16:45]
+    button_texts = [question[0:50] for question in questions]
+
+    return questions, button_texts
+
+
+@st.cache_data
 def get_school_experience_questions(df):
     #get the names for the 16 through 37 columns 
     questions = df.columns[16:38]
@@ -66,67 +75,114 @@ def render_chart_for_questions(survey_data, question):
 
         st.altair_chart(chart, use_container_width=True)
 
+#format and display data tabales 
+def render_data_table(survey_data, data_table_option):
+    #crosstable to get the counts 
+    transformed_df = pd.crosstab(survey_data[' SchoolName'], survey_data[data_table_option])
+    transformed_df.reset_index(inplace=True)
+    transformed_df.columns.name = None
+
+    # Calculate the sums of the response columns 
+    column_names = [str(col) for col in transformed_df.columns[1:]]
+    sums = transformed_df[column_names].sum()
+
+    # Create a new row with the sums
+    all_schools_row = pd.DataFrame([['All Schools'] + sums.tolist()], columns=transformed_df.columns)
+
+    # Append the new row to the original DataFrame
+    df_with_all_schools = pd.concat([all_schools_row, transformed_df], ignore_index=True)
+
+    # Add a 'Totals' column
+    df_with_all_schools['Totals'] = df_with_all_schools[column_names].sum(axis=1)
+
+    # Display the final dataframe
+    st.dataframe(df_with_all_schools, hide_index=True)
+
+#section to show raw data of the survey 
+def show_data_tables():
+    print("... in data tables")
+
+    #retrieve the data
+    survey_data = download_data()
+
+    st.markdown(f"<h4>School Exprience Questions:</h4>", unsafe_allow_html=True)
+
+    questions, button_texts = get_data_table_questions(download_data())
+
+    data_table_option = st.selectbox(
+        "Select a question:",
+        questions, #button_texts,
+        key="data_table_questions_dropdown",
+        index=0
+    )
+
+    render_data_table(survey_data, data_table_option)
+
+
 #renders the school experience questions section 
 def show_school_experience_questions():
-        print('... in school experience questions')
-        if 'school_experience_questions_dropdown' in st.session_state:
-            print(st.session_state.school_experience_questions_dropdown)
+    print('... in school experience questions')
+    if 'school_experience_questions_dropdown' in st.session_state:
+        print(st.session_state.school_experience_questions_dropdown)
 
-        #retrieve the data
-        survey_data = download_data()
+    #retrieve the data
+    survey_data = download_data()
 
-        st.markdown(f"<h4>School Exprience Questions:</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4>School Exprience Questions:</h4>", unsafe_allow_html=True)
 
-        selected_school_experience_question = None
-        questions, button_texts = get_school_experience_questions(download_data())
-        school_experience_question_lookup_dict = dict(zip(button_texts, questions))
+    selected_school_experience_question = None
+    questions, button_texts = get_school_experience_questions(download_data())
+    school_experience_question_lookup_dict = dict(zip(button_texts, questions))
 
-        school_experience_option = st.selectbox(
-            "Select a question:",
-            questions, #button_texts,
-            key="school_experience_questions_dropdown",
-            index=0
-        )
+    school_experience_option = st.selectbox(
+        "Select a question:",
+        questions, #button_texts,
+        key="school_experience_questions_dropdown",
+        index=0
+    )
 
-        # if school_experience_option and school_experience_option != 'Select a question':
-        #     page = 'general_questions'
+    # if school_experience_option and school_experience_option != 'Select a question':
+    #     page = 'general_questions'
 
-        # selected_school_experience_question = get_corresponding_element(school_experience_option, school_experience_question_lookup_dict)
+    # selected_school_experience_question = get_corresponding_element(school_experience_option, school_experience_question_lookup_dict)
 
-        render_chart_for_questions(survey_data, school_experience_option)
+    render_chart_for_questions(survey_data, school_experience_option)
 
 #renders the safety questions section 
 def show_safety_questions():
-        print('... in safety questions')
-        if 'safety_questions_dropdown' in st.session_state:
-            print(st.session_state.safety_questions_dropdown)
+    print('... in safety questions')
+    if 'safety_questions_dropdown' in st.session_state:
+        print(st.session_state.safety_questions_dropdown)
 
-        #retrieve the data
-        survey_data = download_data()
+    #retrieve the data
+    survey_data = download_data()
 
-        st.markdown(f"<h4>Safety Questions:</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4>Safety Questions:</h4>", unsafe_allow_html=True)
 
-        selected_safety_question = None
-        questions, button_texts = get_safety_questions(download_data())
-        safety_question_lookup_dict = dict(zip(button_texts, questions))
+    selected_safety_question = None
+    questions, button_texts = get_safety_questions(download_data())
+    safety_question_lookup_dict = dict(zip(button_texts, questions))
 
-        safety_option = st.selectbox(
-            "Select a question:",
-            questions, #button_texts,
-            key="safety_questions_dropdown",
-            index=0
-        )
+    safety_option = st.selectbox(
+        "Select a question:",
+        questions, #button_texts,
+        key="safety_questions_dropdown",
+        index=0
+    )
 
-        # selected_safety_question = get_corresponding_element(safety_option, safety_question_lookup_dict)
+    # selected_safety_question = get_corresponding_element(safety_option, safety_question_lookup_dict)
 
-        render_chart_for_questions(survey_data, safety_option)
+    render_chart_for_questions(survey_data, safety_option)
 
 
 def main():
 
     # Set the title 
     st.markdown(
-        "<h1 style='text-align: center; font-size: 36px; font-weight: bold;'>Georgia Student Health Survey Dashboard</h1></br>",
+        """
+        <h1 style='text-align: center; font-size: 36px; font-weight: bold;'>Georgia Student Health Survey Dashboard</h1>
+        <h4 style='text-align: center; font-size: 14px; '>Clarke County, Middle and High Schools, 2024</h4></br>
+        """,
         unsafe_allow_html=True,
     )
 
@@ -136,17 +192,19 @@ def main():
 
     page = None 
 
-    if 'school_experience_questions_dropdown' in st.session_state:
+    if 'data_table_questions_dropdown' in st.session_state:
         menu_index = 1
-    elif 'safety_questions_dropdown' in st.session_state:
+    elif 'school_experience_questions_dropdown' in st.session_state:
         menu_index = 2
+    elif 'safety_questions_dropdown' in st.session_state:
+        menu_index = 3
     else: 
         menu_index = 0
 
     with st.sidebar:
         selected_menu_item = option_menu(
             menu_title=None, # "Main Menu",  # required
-            options=["Overview", "School Experience", "Safety"],  # required
+            options=["Overview", "Data Tables", "School Experience", "Safety"],  # required
             #icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             # default_index=menu_index,  # optional
@@ -181,6 +239,8 @@ def main():
 
     if selected_menu_item == 'Overview':
         page = 'overview'
+    elif selected_menu_item == 'Data Tables':
+        page = 'data_tables'
     elif selected_menu_item == 'School Experience':
         page = 'school_experience_questions'
     elif selected_menu_item == 'Safety':
@@ -244,6 +304,9 @@ def main():
                 )
             
             st.altair_chart(chart, use_container_width=True)
+
+    elif page == 'data_tables':    
+        show_data_tables()
 
     elif page == 'school_experience_questions':    
         show_school_experience_questions()
