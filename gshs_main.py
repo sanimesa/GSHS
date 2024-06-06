@@ -15,8 +15,8 @@ def download_data():
 
 @st.cache_data
 def get_data_table_questions(df):
-    #get the names for the 16 through 37 columns 
-    questions = df.columns[16:45]
+    #get the names for the 16 through 59 columns 
+    questions = df.columns[[i for i in range(16, 59)] + [64, 65, 66, 78, 92, 106, 120, 134, 135, 136, 137, 138]]
     button_texts = [question[0:50] for question in questions]
 
     return questions, button_texts
@@ -32,7 +32,7 @@ def get_school_experience_questions(df):
  
 @st.cache_data
 def get_safety_questions(df):
-    #get the names for the 16 through 37 columns 
+    #get the names for the 39 through 45 columns 
     questions = df.columns[38:45]
     button_texts = [question[0:50] for question in questions]
 
@@ -105,7 +105,7 @@ def show_data_tables():
     #retrieve the data
     survey_data = download_data()
 
-    st.markdown(f"<h4>School Exprience Questions:</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4>Data Tables:</h4>", unsafe_allow_html=True)
 
     questions, button_texts = get_data_table_questions(download_data())
 
