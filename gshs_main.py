@@ -5,8 +5,8 @@ import numpy as np
 import altair as alt
 from PIL import Image
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Load your survey data
 @st.cache_data
 def download_data():
     df = pd.read_excel("data/GSHS_2024_MSHS_629.xlsx", sheet_name="GSHS_2024_MSHS_629 (1)")
@@ -174,6 +174,116 @@ def show_safety_questions():
 
     render_chart_for_questions(survey_data, safety_option)
 
+#renders a seaborn heatmap 
+def render_heatmap(df, questions, labels=None):
+    # columns_of_interest = df.columns[45:49]  # Select columns from index 59 to 63 (inclusive)
+    # questions = columns_of_interest.tolist()  # Convert to list
+
+    # Create a dataframe for the questions
+    df_questions = df[questions]
+
+    # Replace non-numeric responses with a standard value (e.g., 0)
+    day_ranges = ['0 days', '1-5 days', '6-10 days', '11-20 days', 'More than 20 days']
+
+    # df_questions.replace(day_ranges, [0, 1, 2, 3, 4], inplace=True)
+
+    # Calculate the percentage of each response per question
+    heatmap_data = df_questions.apply(lambda x: x.value_counts(normalize=True) * 100).fillna(0)
+    # heatmap_data
+
+    heatmap_data_transposed = heatmap_data.T
+
+    heatmap_data_transposed_non_zero = heatmap_data_transposed.drop('0 days', axis=1)
+
+    heatmap_data_transposed_non_zero.index.name = 'Substance'
+    # heatmap_data_transposed_non_zero
+    # Plotting the heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(heatmap_data_transposed_non_zero, annot=True, cmap='coolwarm', linewidths=.5)
+    plt.title('Heatmap of Substance Use Responses')
+    plt.xlabel('Response Category')
+    plt.ylabel('Questions')
+    plt.xticks(ticks=[0.5, 1.5, 2.5, 3.5], labels=day_ranges[1:])
+    # plt.yticks(ticks=range(len(questions)), labels=[f"Q{i+30}" for i in range(len(questions))], rotation=0)
+    if labels == None:
+        labels = [f"Q{i+30}" for i in range(len(questions))]
+    plt.yticks(ticks=range(len(questions)), labels=labels, rotation=0)
+    # plt.show()
+
+    return plt
+
+# Function to calculate the percentage of 'Yes' responses for each question per Ethnicity
+def calculate_percentages(survey_data, question):
+    count_yes = survey_data.groupby('Ethnicity')[question].apply(lambda x: (x == 'Yes').sum())
+    total = survey_data['Ethnicity'].value_counts()
+    percentage_yes = (count_yes / total * 100).round(2)
+    return percentage_yes
+
+#renders the substance abuse questions
+def show_substance_abuse_questions():
+    print('... in substance abuse questions')
+    #"44. Where do you or your friends usually use alcohol, tobacco, or drugs? Check all that apply:    Do Not Use",
+
+    st.markdown(f"<h4>Substance Abuse Related Questions:</h4>", unsafe_allow_html=True)
+    st.markdown(f"<b>44. Where do you or your friends usually use alcohol, tobacco, or drugs?</b>", unsafe_allow_html=True)
+    # st.text("44. Where do you or your friends usually use alcohol, tobacco, or drugs?")
+
+    #retrieve the data
+    survey_data = download_data()
+
+    columns_of_interest = survey_data.columns[59:64]  # Select columns from index 59 to 63 (inclusive)
+    questions = columns_of_interest.tolist()  # Convert to list
+
+    # Create a dataframe with Ethnicity and the questions of interest
+    df_interest = survey_data[['Ethnicity'] + questions]
+
+    # Calculate the percentages for each question
+    percentages = {question: calculate_percentages(df_interest, question) for question in questions}
+
+    # Create a summary dataframe
+    summary_df = pd.DataFrame(percentages)
+
+    summary_df.reset_index(inplace=True)
+
+    summary_df.rename(
+        columns={c: f"{c[c.index(':')+1:]}" for c in summary_df.columns if c.startswith('44')}, inplace=True
+    )
+
+    # Display the final dataframe
+    st.dataframe(summary_df, hide_index=True)
+
+    st.empty()
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        columns_of_interest = survey_data.columns[45:49]  # Select columns from index 59 to 63 (inclusive)
+        questions = columns_of_interest.tolist()  # Convert to list
+        labels = ['Alcohol', 'Cigaretts', 'Other Tobacco', 'Electronic Vapor']
+
+        st.markdown(f"<b>Alcohol and Tobacco Product Usage:</b>", unsafe_allow_html=True)
+        plt = render_heatmap(survey_data, questions, labels)
+        st.pyplot(plt)
+
+    with col2:
+        columns_of_interest = survey_data.columns[49:52]  # Select columns from index 59 to 63 (inclusive)
+        questions = columns_of_interest.tolist()  # Convert to list
+        labels = ['Marijuana', 'Methamphetamines', 'Heroin']
+
+
+        st.markdown(f"<b>Drug Abuse:</b>", unsafe_allow_html=True)
+        plt = render_heatmap(survey_data, questions, labels)
+        st.pyplot(plt)
+
+    with col3: 
+        columns_of_interest = survey_data.columns[[52, 53, 55, 56]]  
+        questions = columns_of_interest.tolist()  # Convert to list
+        labels = ['Painkiller', 'Tranquilizer', 'Stimulant', 'Other']
+
+        st.markdown(f"<b>Prescription Drug Abuse:</b>", unsafe_allow_html=True)
+        plt = render_heatmap(survey_data, questions, labels)
+        st.pyplot(plt)
+
 
 def main():
 
@@ -192,19 +302,19 @@ def main():
 
     page = None 
 
-    if 'data_table_questions_dropdown' in st.session_state:
-        menu_index = 1
-    elif 'school_experience_questions_dropdown' in st.session_state:
-        menu_index = 2
-    elif 'safety_questions_dropdown' in st.session_state:
-        menu_index = 3
-    else: 
-        menu_index = 0
+    # if 'data_table_questions_dropdown' in st.session_state:
+    #     menu_index = 1
+    # elif 'school_experience_questions_dropdown' in st.session_state:
+    #     menu_index = 2
+    # elif 'safety_questions_dropdown' in st.session_state:
+    #     menu_index = 3
+    # else: 
+    #     menu_index = 0
 
     with st.sidebar:
         selected_menu_item = option_menu(
             menu_title=None, # "Main Menu",  # required
-            options=["Overview", "Data Tables", "School Experience", "Safety"],  # required
+            options=["Overview", "Data Tables", "School Experience", "Safety", 'Substance Abuse'],  # required
             #icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             # default_index=menu_index,  # optional
@@ -245,19 +355,13 @@ def main():
         page = 'school_experience_questions'
     elif selected_menu_item == 'Safety':
         page = 'safety_questions'
+    elif selected_menu_item == 'Substance Abuse':
+        page = 'substance_abuse_questions'
 
 
     if page == 'home':
         # Display the default content
-        chart_data = pd.DataFrame(np.random.randn(20, 3), columns=["a", "b", "c"])
-
-        c = (
-            alt.Chart(chart_data)
-            .mark_circle()
-            .encode(x="a", y="b", size="c", color="c", tooltip=["a", "b", "c"])
-        )
-
-        st.altair_chart(c, use_container_width=True)
+        st.text("Not implemented yet")
     elif page == 'overview':
         print('... in overview')
 
@@ -313,6 +417,9 @@ def main():
 
     elif page == 'safety_questions':    
         show_safety_questions()
+
+    elif page == 'substance_abuse_questions':    
+        show_substance_abuse_questions()
 
     else:
         st.markdown(f"<h2>Welcome to the {page.replace('_', ' ').title()} Page</h2>", unsafe_allow_html=True)
