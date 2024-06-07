@@ -38,6 +38,13 @@ def get_safety_questions(df):
 
     return questions, button_texts
 
+@st.cache_data
+def get_mental_health_questions(df):
+    questions = df.columns[[66, 78, 92, 106, 120]]
+    button_texts = [question[0:50] for question in questions]
+
+    return questions, button_texts
+
 # function to get corresponding element
 def get_corresponding_element(item, lookup_dict):
     return lookup_dict.get(item, "Item not found")
@@ -292,14 +299,35 @@ def show_mental_health_questions():
     #retrieve the data
     survey_data = download_data()
 
-    transformed_df_stress = pd.crosstab(survey_data[' SchoolName'], survey_data['47. How often do you feel stressed?'])
+    questions, button_texts = get_mental_health_questions(download_data())
+
+    mental_health_option = st.selectbox(
+        "Select a question:",
+        questions, #button_texts,
+        key="mental_health_dropdown",
+        index=0
+    )
+
+
+    transformed_df_stress = pd.crosstab(survey_data[' SchoolName'], survey_data[mental_health_option])
     transformed_df_stress.reset_index(inplace=True)
     transformed_df_stress.columns.name = None
     
-    st.markdown(f"<b>47. How often do you feel stressed?</b>", unsafe_allow_html=True)
+    st.markdown(f"<b>{mental_health_option}</b>", unsafe_allow_html=True)
     st.dataframe(transformed_df_stress, hide_index=True)
 
-    columns_of_interest = survey_data.columns[67:78]  # Select columns from index 59 to 63 (inclusive)
+    question_number = int(mental_health_option[:2])
+
+    # create a slice object based on different values of mental_health_option
+    causes_dict = {
+        47: slice(67, 78),
+        49: slice(79, 92),
+        51: slice(93, 106),
+        53: slice(107, 120),
+        55: slice(121, 134)
+    }
+
+    columns_of_interest = survey_data.columns[causes_dict[question_number]]  # Select columns from index 59 to 63 (inclusive)
     questions = columns_of_interest.tolist()  # Convert to list
 
     # Create a dataframe with Ethnicity and the questions of interest
@@ -316,10 +344,13 @@ def show_mental_health_questions():
     summary_df.reset_index(inplace=True)
 
     summary_df.rename(
-        columns={c: f"{c[c.index(':')+1:]}" for c in summary_df.columns if c.startswith('48')}, inplace=True
+        columns={c: f"{c[c.index(':')+1:]}" for c in summary_df.columns if c.startswith(str(question_number+1))}, inplace=True
     )
 
-    st.markdown(f"<b>48. What causes you stress? Check all that apply: </b>", unsafe_allow_html=True)
+    causes_question = survey_data.columns[causes_dict[question_number].start]
+    causes_question = causes_question[:causes_question.index(':')+1]
+
+    st.markdown(f"<b>{causes_question}</b>", unsafe_allow_html=True)
     st.dataframe(summary_df, hide_index=True)
 
 
