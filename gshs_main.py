@@ -201,7 +201,7 @@ def render_heatmap(df, questions, labels=None):
     plt.figure(figsize=(8, 6))
     sns.heatmap(heatmap_data_transposed_non_zero, annot=True, cmap='coolwarm', linewidths=.5)
     plt.title('Heatmap of Substance Use Responses')
-    plt.xlabel('Response Category')
+    plt.xlabel('% Responding Yes')
     plt.ylabel('Questions')
     plt.xticks(ticks=[0.5, 1.5, 2.5, 3.5], labels=day_ranges[1:])
     # plt.yticks(ticks=range(len(questions)), labels=[f"Q{i+30}" for i in range(len(questions))], rotation=0)
@@ -284,6 +284,44 @@ def show_substance_abuse_questions():
         plt = render_heatmap(survey_data, questions, labels)
         st.pyplot(plt)
 
+def show_mental_health_questions():
+    print('... in mental health questions')
+
+    st.markdown(f"<h4>Mental Health Related Questions:</h4>", unsafe_allow_html=True)
+
+    #retrieve the data
+    survey_data = download_data()
+
+    transformed_df_stress = pd.crosstab(survey_data[' SchoolName'], survey_data['47. How often do you feel stressed?'])
+    transformed_df_stress.reset_index(inplace=True)
+    transformed_df_stress.columns.name = None
+    
+    st.markdown(f"<b>47. How often do you feel stressed?</b>", unsafe_allow_html=True)
+    st.dataframe(transformed_df_stress, hide_index=True)
+
+    columns_of_interest = survey_data.columns[67:78]  # Select columns from index 59 to 63 (inclusive)
+    questions = columns_of_interest.tolist()  # Convert to list
+
+    # Create a dataframe with Ethnicity and the questions of interest
+    df_interest = survey_data[['Ethnicity'] + questions]
+
+    # Calculate the percentages for each question
+    percentages = {question: calculate_percentages(df_interest, question) for question in questions}
+
+    # Create a summary dataframe
+    summary_df = pd.DataFrame(percentages)
+
+    # import ace_tools as tools; tools.display_dataframe_to_user(name="Ethnicity and Substance Use Response Percentages", dataframe=summary_df)
+
+    summary_df.reset_index(inplace=True)
+
+    summary_df.rename(
+        columns={c: f"{c[c.index(':')+1:]}" for c in summary_df.columns if c.startswith('48')}, inplace=True
+    )
+
+    st.markdown(f"<b>48. What causes you stress? Check all that apply: </b>", unsafe_allow_html=True)
+    st.dataframe(summary_df, hide_index=True)
+
 
 def main():
 
@@ -314,7 +352,7 @@ def main():
     with st.sidebar:
         selected_menu_item = option_menu(
             menu_title=None, # "Main Menu",  # required
-            options=["Overview", "Data Tables", "School Experience", "Safety", 'Substance Abuse'],  # required
+            options=["Overview", "Data Tables", "School Experience", "Safety", 'Substance Abuse', 'Mental Health'],  # required
             #icons=["house", "book", "envelope"],  # optional
             menu_icon="cast",  # optional
             # default_index=menu_index,  # optional
@@ -357,7 +395,8 @@ def main():
         page = 'safety_questions'
     elif selected_menu_item == 'Substance Abuse':
         page = 'substance_abuse_questions'
-
+    elif selected_menu_item == 'Mental Health':
+        page = 'mental_health_questions'
 
     if page == 'home':
         # Display the default content
@@ -420,6 +459,9 @@ def main():
 
     elif page == 'substance_abuse_questions':    
         show_substance_abuse_questions()
+    
+    elif page == 'mental_health_questions':    
+        show_mental_health_questions()
 
     else:
         st.markdown(f"<h2>Welcome to the {page.replace('_', ' ').title()} Page</h2>", unsafe_allow_html=True)
